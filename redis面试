@@ -27,3 +27,6 @@ fork是Redis创建子进程来进行bgsave操作，cow是指 copy on write 子�
 Redis同步机制
 Redis可以进行主从同步，从从同步，第一次同步时，主节点需要做一次bgsave，并同时将修改的记录，记录到buffer（缓冲）中，完成之后rdb文件会全量同步到复制节点
 复制节点接受完成之后将rdb镜像加载到内存，加载完成之后，在通知主节点将期间的的操作记录同步到复制节点进行重放就完成同步的过程
+Redis集群
+Redis Sentinal 高可用，如果master宕机会自动将slave提升为maser继续提供服务
+Redis Cluster  扩展，当单个Redis内存不足时是使用Cluster进行分片存储
