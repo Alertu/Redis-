@@ -1,0 +1,26 @@
+migrate 迁移
+格式：migrate host prot key destination-db timeout
+将key原子性的从当前实例传送到目标实例的制定数据库，一旦传送成功当前实例上的key会被删除
+实现过程：对给定的key执行dump命令，将他序列化，然后传送到目标实例，目标实例咋通过restore对数据进行反序列化，并将反序列化的数据存到数据库中，只要
+看到pestore返回OK就会吊桶del删除自己数据库中的key
+timeout：是以毫秒，规定传送时间不超过这个时间
+如果传送过程中发生错误或者超出时间，那么命令就会停止运行并返回一个错误：ioerr
+实际代码：
+$ ./redis-cli 
+ redis 127.0.0.1:6379> flushdb OK 
+redis 127.0.0.1:6379> SET greeting "Hello from 6379 instance" OK  
+redis 127.0.0.1:6379> MIGRATE 127.0.0.1 7777 greeting 0 1000 OK 
+redis 127.0.0.1:6379> EXISTS greeting       # 迁移成功后 key 被删除 
+Dump 序列化指定的key
+示例代码： 
+redis> SET greeting "hello, dumping world!" OK  
+redis> DUMP greeting "\x00\x15hello, dumping world!\x06\x00E\xa0Z\x82\xd8r\xc1\xde" 
+redis> DUMP not-exists-key (nil) 
+Restore 反序列化
+ 格式：restore key ttl serialized-value 
+代码：
+redis> SET greeting "hello, dumping world!" OK 
+redis> DUMP greeting "\x00\x15hello, dumping world!\x06\x00E\xa0Z\x82\xd8r\xc1\xde" 
+redis> RESTORE greeting-again 0 "\x00\x15hello, dumping world!\x06\x00E\xa0Z\x82\xd8r\xc1\xde" OK 
+redis> GET greeting-again "hello, dumping world!" 
+redis> RESTORE fake-message 0 "hello moto moto blah blah"   ; 使用错 误的值进行反序列化 (error) ERR DUMP payload version or checksum are wrong 
